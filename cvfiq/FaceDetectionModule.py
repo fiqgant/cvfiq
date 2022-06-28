@@ -1,9 +1,3 @@
-"""
-Face Detection Module
-By: Computer Vision Zone
-Website: https://www.computervision.zone/
-"""
-
 import cv2
 import mediapipe as mp
 

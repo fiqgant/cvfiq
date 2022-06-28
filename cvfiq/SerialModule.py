@@ -1,10 +1,3 @@
-"""
-Serial Module
-Uses "pySerial" Package
-By: Computer Vision Zone
-Website: https://www.computervision.zone/
-"""
-
 import serial
 import time
 import logging

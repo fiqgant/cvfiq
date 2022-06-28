@@ -1,4 +1,4 @@
-import cvzone
+import cvfiq
 import cv2
 import numpy as np
 import time
@@ -47,7 +47,7 @@ class PID:
 
 def main():
     cap = cv2.VideoCapture(0)
-    detector = cvzone.FaceDetector()
+    detector = cvfiq.FaceDetector()
     # For a 640x480 image center target is 320 and 240
     xPID = PID([1, 0.000000000001, 1], 640 // 2)
     yPID = PID([1, 0.000000000001, 1], 480 // 2, axis=1, limit=[-100, 100])

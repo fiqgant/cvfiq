@@ -1,9 +1,3 @@
-"""
-FPS Module
-By: Computer Vision Zone
-Website: https://www.computervision.zone/
-"""
-
 import time
 import cv2
 
