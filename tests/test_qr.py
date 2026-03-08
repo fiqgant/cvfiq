@@ -17,7 +17,7 @@ scanner = cvfiq.qr()
 
 with cvfiq.Camera(0, showFPS=True, title="QR Test") as cam:
     for img in cam:
-        codes, img = scanner.find(img)
+        codes, img = scanner.findCodes(img)
         for c in codes:
             cvfiq.text(img, f"{c['type']}: {c['data']}", (10, 30), bg=True)
             print(f"  Detected [{c['type']}]: {c['data']}")

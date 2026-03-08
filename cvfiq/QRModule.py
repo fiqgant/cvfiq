@@ -13,7 +13,7 @@ class QRDetector:
 
     Usage:
         qr = QRDetector()
-        codes, img = qr.find(img)
+        codes, img = qr.findCodes(img)
         for c in codes:
             print(c["data"], c["type"], c["center"])
     """
@@ -28,7 +28,7 @@ class QRDetector:
             except AttributeError:
                 pass
 
-    def find(self, img, draw=True):
+    def findCodes(self, img, draw=True):
         """
         Detect QR codes and barcodes in img.
 

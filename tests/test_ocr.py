@@ -22,7 +22,7 @@ except Exception as e:
 
 with cvfiq.Camera(0, showFPS=True, title="OCR Test") as cam:
     for img in cam:
-        texts, img = reader.find(img)
+        texts, img = reader.findText(img)
         for t in texts:
             print(f"  [{t['confidence']:.0f}%] {t['text']}")
         cam.show(img)

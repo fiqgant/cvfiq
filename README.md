@@ -438,7 +438,7 @@ cvfiq.run(process)
 
 | Method | Returns | Description |
 |---|---|---|
-| `find(img, draw=True)` | `(codes, img)` | Detect QR codes and barcodes; each dict has `data`, `type`, `corners`, `center` |
+| `findCodes(img, draw=True)` | `(codes, img)` | Detect QR codes and barcodes; each dict has `data`, `type`, `corners`, `center` |
 
 ```python
 import cvfiq
@@ -446,7 +446,7 @@ import cvfiq
 scanner = cvfiq.qr()
 
 def process(img):
-    codes, img = scanner.find(img)
+    codes, img = scanner.findCodes(img)
     for c in codes:
         print(c["type"], c["data"])
     return img
@@ -605,7 +605,7 @@ Models auto-downloaded on first use (OpenCV DNN Caffe).
 
 | Method | Returns | Description |
 |---|---|---|
-| `find(img, draw=True)` | `(results, img)` | Estimate age and gender; each dict has `gender`, `genderConf`, `age`, `ageConf`, `bbox`, `center` |
+| `findAgeGender(img, draw=True)` | `(results, img)` | Estimate age and gender; each dict has `gender`, `genderConf`, `age`, `ageConf`, `bbox`, `center` |
 
 ```python
 import cvfiq
@@ -613,7 +613,7 @@ import cvfiq
 detector = cvfiq.age_gender()   # models auto-downloaded on first run
 
 def process(img):
-    results, img = detector.find(img)
+    results, img = detector.findAgeGender(img)
     for r in results:
         print(f"{r['gender']} ({r['genderConf']:.0%}), age {r['age']}")
     return img

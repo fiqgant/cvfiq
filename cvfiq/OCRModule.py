@@ -17,7 +17,7 @@ class OCRReader:
 
     Usage:
         ocr = OCRReader()
-        texts, img = ocr.find(img)
+        texts, img = ocr.findText(img)
         for t in texts:
             print(t["text"], t["confidence"])
 
@@ -45,7 +45,7 @@ class OCRReader:
         """True if pytesseract is installed and usable."""
         return self._tess is not None
 
-    def find(self, img, draw=True):
+    def findText(self, img, draw=True):
         """
         Find and read text in img.
 

@@ -21,6 +21,6 @@ except Exception as e:
 
 with cvfiq.Camera(0, showFPS=True, title="Depth Test") as cam:
     for img in cam:
-        depthMap, colorized = estimator.find(img)
+        depthMap, colorized = estimator.findDepth(img)
         stacked = cvfiq.stackImages([img, colorized], cols=2, scale=0.8)
         cam.show(stacked)

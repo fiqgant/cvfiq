@@ -13,7 +13,7 @@ class MotionDetector:
 
     Usage:
         motion = MotionDetector(minArea=500)
-        detected, regions, img = motion.find(img)
+        detected, regions, img = motion.findMotion(img)
         if detected:
             print(f"{len(regions)} moving regions")
     """
@@ -32,7 +32,7 @@ class MotionDetector:
         )
         self._kernel    = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
 
-    def find(self, img, draw=True):
+    def findMotion(self, img, draw=True):
         """
         Find motion regions in img.
 

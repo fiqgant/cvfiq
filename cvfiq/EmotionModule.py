@@ -13,7 +13,7 @@ class EmotionDetector:
 
     Usage:
         emotion = EmotionDetector()
-        results, img = emotion.find(img)
+        results, img = emotion.findEmotions(img)
         for r in results:
             print(r["emotion"], r["scores"])
     """
@@ -35,7 +35,7 @@ class EmotionDetector:
     def available(self):
         return self._df is not None
 
-    def find(self, img, draw=True):
+    def findEmotions(self, img, draw=True):
         """
         Detect emotions in all faces found in img.
 

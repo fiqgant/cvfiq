@@ -21,7 +21,7 @@ except Exception as e:
 
 with cvfiq.Camera(0, showFPS=True, title="Age Gender Test") as cam:
     for img in cam:
-        results, img = detector.find(img)
+        results, img = detector.findAgeGender(img)
         for r in results:
             print(f"  {r['gender']} ({r['genderConf']:.0%}), age {r['age']}")
         cam.show(img)

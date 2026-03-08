@@ -46,7 +46,7 @@ class AgeGenderDetector:
 
     Usage:
         ag = AgeGenderDetector()
-        results, img = ag.find(img)
+        results, img = ag.findAgeGender(img)
         for r in results:
             print(r["gender"], r["age"], r["center"])
     """
@@ -92,7 +92,7 @@ class AgeGenderDetector:
             faces.append((x1, y1, x2 - x1, y2 - y1, conf))
         return faces
 
-    def find(self, img, draw=True):
+    def findAgeGender(self, img, draw=True):
         """
         Estimate age and gender for all detected faces.
 

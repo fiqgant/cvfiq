@@ -25,7 +25,7 @@ class DepthEstimator:
 
     Usage:
         depth = DepthEstimator()
-        depthMap, colorized = depth.find(img)   # colorized is a nice heatmap
+        depthMap, colorized = depth.findDepth(img)   # colorized is a nice heatmap
         dist = depth.getDistance(depthMap, (cx, cy))  # relative depth at point
     """
 
@@ -47,7 +47,7 @@ class DepthEstimator:
         urllib.request.urlretrieve(_MODEL_URL, path, reporthook=_prog)
         print()
 
-    def find(self, img):
+    def findDepth(self, img):
         """
         Estimate depth for img.
 
@@ -84,5 +84,5 @@ class DepthEstimator:
 
     def overlay(self, img, alpha=0.5):
         """Return img with depth heatmap blended on top."""
-        _, colorized = self.find(img)
+        _, colorized = self.findDepth(img)
         return cv2.addWeighted(img, 1 - alpha, colorized, alpha, 0)
