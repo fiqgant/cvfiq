@@ -1,4 +1,22 @@
-import cv2  # re-exported so users never need to import cv2 separately
+import cv2
+
+# ── cv2 passthrough — users never need to import cv2 separately ───────────────
+from cv2 import (
+    VideoCapture, VideoWriter, imread, imwrite, imshow, waitKey,
+    destroyAllWindows, destroyWindow, namedWindow, moveWindow,
+    resize, flip, rotate, cvtColor, split, merge,
+    GaussianBlur, medianBlur, bilateralFilter,
+    Canny, dilate, erode, threshold,
+    rectangle, circle, line, ellipse, polylines, fillPoly, putText,
+    addWeighted, bitwise_and, bitwise_or, bitwise_not,
+    getTextSize, getRotationMatrix2D, warpAffine,
+    FONT_HERSHEY_PLAIN, FONT_HERSHEY_SIMPLEX, FONT_HERSHEY_DUPLEX,
+    COLOR_BGR2RGB, COLOR_BGR2GRAY, COLOR_BGR2HSV, COLOR_GRAY2BGR,
+    FILLED, LINE_AA, LINE_8,
+    CAP_PROP_FRAME_WIDTH, CAP_PROP_FRAME_HEIGHT, CAP_PROP_FPS,
+    INTER_LINEAR, INTER_AREA, INTER_CUBIC,
+    ROTATE_90_CLOCKWISE, ROTATE_90_COUNTERCLOCKWISE, ROTATE_180,
+)
 
 from cvfiq.Utils import stackImages, cornerRect, findContours, overlayPNG, rotateImage, putTextRect
 from cvfiq.ColorModule import ColorFinder
@@ -16,7 +34,7 @@ from cvfiq.ArucoModule import ArucoDetector
 from cvfiq.DNNModule import DNNClassifier
 from cvfiq.VideoStabilizerModule import VideoStabilizer
 
-# MediaPipe Tasks API modules (require model files)
+# MediaPipe Tasks API modules (require model files, auto-downloaded)
 try:
     from cvfiq.GestureModule import GestureDetector
     from cvfiq.FaceLandmarkerModule import FaceLandmarker
@@ -58,6 +76,83 @@ def _ensure_model(filename):
     urllib.request.urlretrieve(url, filename, reporthook=_progress)
     print()
     return filename
+
+
+# ── Camera — replaces the 7-line capture loop boilerplate ─────────────────────
+
+class Camera:
+    """
+    Context manager that wraps VideoCapture.
+    Iterate to get frames; call cam.show(img) to display and handle quit.
+
+    Usage:
+        with cvfiq.Camera(0, showFPS=True) as cam:
+            hand = cvfiq.hand()
+            for img in cam:
+                hands, img = hand.findHands(img)
+                cam.show(img)
+    """
+
+    def __init__(self, source=0, title="cvfiq", showFPS=False, quitKey='q', width=None, height=None):
+        self.cap      = cv2.VideoCapture(source)
+        self.title    = title
+        self.showFPS  = showFPS
+        self.quitKey  = quitKey
+        self._running = False
+        self._fpsCounter = FPS() if showFPS else None
+
+        if width:
+            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+        if height:
+            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+
+    def __enter__(self):
+        self._running = True
+        return self
+
+    def __iter__(self):
+        while self._running:
+            success, img = self.cap.read()
+            if not success:
+                break
+            yield img
+
+    def show(self, img, title=None):
+        """Display frame. Stops iteration when quit key is pressed."""
+        if self._fpsCounter is not None:
+            _, img = self._fpsCounter.update(img)
+        cv2.imshow(title or self.title, img)
+        if cv2.waitKey(1) & 0xFF == ord(self.quitKey):
+            self._running = False
+
+    def __exit__(self, *args):
+        self.cap.release()
+        cv2.destroyAllWindows()
+
+
+# ── run() — simplest possible camera app in 4 lines ──────────────────────────
+
+def run(fn, source=0, title="cvfiq", showFPS=True, quitKey='q',
+        width=None, height=None):
+    """
+    Open camera, call fn(img) every frame, display the result.
+    Press quitKey (default 'q') to exit.
+
+    Usage:
+        import cvfiq
+        hand = cvfiq.hand()
+
+        def process(img):
+            hands, img = hand.findHands(img)
+            return img
+
+        cvfiq.run(process)
+    """
+    with Camera(source, title=title, showFPS=showFPS, quitKey=quitKey,
+                width=width, height=height) as cam:
+        for img in cam:
+            result = fn(img)
+            cam.show(result if result is not None else img)
 
 
 # ── Shorthand factory functions ───────────────────────────────────────────────

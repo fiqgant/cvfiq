@@ -2,40 +2,37 @@
 
 A Python Computer Vision library that makes it easy to run image processing and AI functions using OpenCV and MediaPipe.
 
-> **`cv2` is included** — no need to install or import it separately.
+> **One import** — `cv2` is bundled, no separate install or import needed.
 > **Model files are auto-downloaded** — Tasks API detectors work out of the box.
+> **`cvfiq.run()`** — handles the camera loop, display, and quit key for you.
 
 ## Quick Usage
 
 ```python
 import cvfiq
-from cvfiq import cv2  # cv2 bundled — no separate install needed
-
-cap  = cv2.VideoCapture(0)
 
 hand = cvfiq.hand(maxHands=1)
 face = cvfiq.face()
-mesh = cvfiq.mesh()
-body = cvfiq.pose()
-seg  = cvfiq.segment()
-fps  = cvfiq.fps()
 
-while True:
-    success, img = cap.read()
-
+def process(img):
     hands, img = hand.findHands(img)
     img, bboxs = face.findFaces(img)
-    img, faces = mesh.findFaceMesh(img)
-    img        = body.findPose(img)
-    img        = seg.removeBG(img, imgBg=(0, 255, 0))
-    f          = fps.update()
+    return img
 
-    cv2.imshow("cvfiq", img)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
+cvfiq.run(process)  # opens camera, loops, shows FPS, press q to quit
+```
 
-cap.release()
-cv2.destroyAllWindows()
+## Camera Loop (manual control)
+
+```python
+import cvfiq
+
+hand = cvfiq.hand(maxHands=1)
+
+with cvfiq.Camera(0, showFPS=True, title="Hand Demo") as cam:
+    for img in cam:
+        hands, img = hand.findHands(img)
+        cam.show(img)
 ```
 
 ## Requirements
@@ -68,26 +65,17 @@ pip install cvfiq[tensorflow]   # TensorFlow
 
 ```python
 import cvfiq
-from cvfiq import cv2
 
-cap      = cv2.VideoCapture(0)
 detector = cvfiq.face()
 
-while True:
-    success, img = cap.read()
+def process(img):
     img, bboxs = detector.findFaces(img)
-
     if bboxs:
         # bboxInfo keys: "id", "bbox", "score", "center", "keypoints"
-        center    = bboxs[0]["center"]
-        keypoints = bboxs[0]["keypoints"]  # rightEye, leftEye, nose, mouth, rightEar, leftEar
-        cv2.circle(img, center, 5, (255, 0, 255), cv2.FILLED)
+        cvfiq.circle(img, bboxs[0]["center"], 5, (255, 0, 255), cvfiq.FILLED)
+    return img
 
-    cv2.imshow("Image", img)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
-cap.release()
-cv2.destroyAllWindows()
+cvfiq.run(process)
 ```
 
 ---
@@ -96,43 +84,24 @@ cv2.destroyAllWindows()
 
 ```python
 import cvfiq
-from cvfiq import cv2
 
-cap      = cv2.VideoCapture(0)
 detector = cvfiq.hand(detectionCon=0.8, maxHands=2)
 
-while True:
-    success, img = cap.read()
+def process(img):
     hands, img = detector.findHands(img)
-
     if hands:
         hand1   = hands[0]
         lmList1 = hand1["lmList"]   # 21 landmarks [x, y, z]
         bbox1   = hand1["bbox"]     # x, y, w, h
-        center1 = hand1["center"]   # cx, cy
         type1   = hand1["type"]     # "Left" or "Right"
 
-        fingers1 = detector.fingersUp(hand1)  # [thumb, index, middle, ring, pinky]
-
-        # 2D distance between two landmarks
+        fingers = detector.fingersUp(hand1)            # [thumb, index, middle, ring, pinky]
         length, info, img = detector.findDistance(lmList1[8][0:2], lmList1[4][0:2], img)
-
-        # 3D distance (uses z-depth)
         length3d = detector.findDistance3D(lmList1[8], lmList1[4])
+        angle    = detector.findAngle(lmList1[8], lmList1[0], lmList1[4])
+    return img
 
-        # Angle between 3 landmarks (index tip - wrist - thumb tip)
-        angle = detector.findAngle(lmList1[8], lmList1[0], lmList1[4])
-
-        if len(hands) == 2:
-            hand2   = hands[1]
-            lmList2 = hand2["lmList"]
-            length, info, img = detector.findDistance(lmList1[8][0:2], lmList2[8][0:2], img)
-
-    cv2.imshow("Image", img)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
-cap.release()
-cv2.destroyAllWindows()
+cvfiq.run(process)
 ```
 
 ---
@@ -141,31 +110,18 @@ cv2.destroyAllWindows()
 
 ```python
 import cvfiq
-from cvfiq import cv2
 
-cap      = cv2.VideoCapture(0)
 detector = cvfiq.pose(smoothAlpha=0.5)  # 0=max smooth, 1=no smooth
 
-while True:
-    success, img = cap.read()
+def process(img):
     img = detector.findPose(img)
     lmList, bboxInfo = detector.findPosition(img, bboxWithHands=False)
-
     if lmList:
-        # Calculate angle at elbow (landmarks 11, 13, 15)
-        angle = detector.findAngle(img, 11, 13, 15)
-        # Check if angle is within range
+        angle     = detector.findAngle(img, 11, 13, 15)  # shoulder-elbow-wrist
         isCorrect = detector.angleCheck(angle, targetAngle=90, addOn=20)
+    return img
 
-    if bboxInfo:
-        center = bboxInfo["center"]
-        cv2.circle(img, center, 5, (255, 0, 255), cv2.FILLED)
-
-    cv2.imshow("Image", img)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
-cap.release()
-cv2.destroyAllWindows()
+cvfiq.run(process)
 ```
 
 ---
@@ -174,36 +130,20 @@ cv2.destroyAllWindows()
 
 ```python
 import cvfiq
-from cvfiq import cv2
-from cvfiq.FaceMeshModule import FaceMeshDetector  # needed for region constants
+from cvfiq.FaceMeshModule import FaceMeshDetector  # for region constants
 
-cap      = cv2.VideoCapture(0)
-detector = cvfiq.mesh(maxFaces=2, refineLandmarks=False)
+detector = cvfiq.mesh(maxFaces=2)
 
-while True:
-    success, img = cap.read()
+def process(img):
     img, faces = detector.findFaceMesh(img)
-
     if faces:
-        face = faces[0]
-
-        # Get specific region landmarks (requires class for constants)
-        leftEye = detector.getRegion(face, FaceMeshDetector.LEFT_EYE)
-        lips    = detector.getRegion(face, FaceMeshDetector.LIPS)
-
-        # Detect blink
-        blink = detector.blinkDetector(face)
+        blink = detector.blinkDetector(faces[0])
         # {"left": bool, "right": bool, "leftEAR": float, "rightEAR": float}
-
-        # Detect mouth open
-        mouth = detector.mouthOpen(face)
+        mouth = detector.mouthOpen(faces[0])
         # {"open": bool, "ratio": float}
+    return img
 
-    cv2.imshow("Image", img)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
-cap.release()
-cv2.destroyAllWindows()
+cvfiq.run(process)
 ```
 
 ---
@@ -212,30 +152,14 @@ cv2.destroyAllWindows()
 
 ```python
 import cvfiq
-from cvfiq import cv2
 
-cap       = cv2.VideoCapture(0)
-segmentor = cvfiq.segment(model=1)  # 0=general, 1=landscape (faster)
-imgBg     = cv2.imread("background.jpg")
+seg   = cvfiq.segment(model=1)  # 0=general, 1=landscape (faster)
+imgBg = cvfiq.imread("background.jpg")  # or use a color tuple: (0, 255, 0)
 
-while True:
-    success, img = cap.read()
+def process(img):
+    return seg.removeBG(img, imgBg=imgBg, smooth=True)
 
-    # Image background with smooth edges
-    imgOut = segmentor.removeBG(img, imgBg=imgBg, threshold=0.1, smooth=True, kernelSize=11)
-
-    # Solid color background
-    # imgOut = segmentor.removeBG(img, imgBg=(0, 255, 0), smooth=True)
-
-    # Blur background
-    # blurred = cv2.GaussianBlur(img, (55, 55), 0)
-    # imgOut = segmentor.removeBG(img, imgBg=blurred, smooth=True)
-
-    cv2.imshow("Output", imgOut)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
-cap.release()
-cv2.destroyAllWindows()
+cvfiq.run(process)
 ```
 
 ---
@@ -244,25 +168,18 @@ cv2.destroyAllWindows()
 
 ```python
 import cvfiq
-from cvfiq import cv2
 
-cap      = cv2.VideoCapture(0)
-detector = cvfiq.gesture()  # downloads gesture_recognizer.task automatically
+detector = cvfiq.gesture()  # downloads model automatically on first run
 
-while True:
-    success, img = cap.read()
+def process(img):
     gestures, img = detector.findGestures(img)
-
     for g in gestures:
         print(g["hand"], g["gesture"], g["score"])
         # Gestures: Thumb_Up, Thumb_Down, Victory, Open_Palm,
         #           Closed_Fist, Pointing_Up, ILoveYou, None
+    return img
 
-    cv2.imshow("Gesture", img)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
-cap.release()
-cv2.destroyAllWindows()
+cvfiq.run(process)
 ```
 
 ---
@@ -271,33 +188,19 @@ cv2.destroyAllWindows()
 
 ```python
 import cvfiq
-from cvfiq import cv2
-from cvfiq.FaceLandmarkerModule import FaceLandmarker  # needed for blendshape constants
+from cvfiq.FaceLandmarkerModule import FaceLandmarker  # for blendshape constants
 
-cap      = cv2.VideoCapture(0)
-detector = cvfiq.landmarker()  # downloads face_landmarker.task automatically
+detector = cvfiq.landmarker()  # downloads model automatically on first run
 
-while True:
-    success, img = cap.read()
+def process(img):
     faces, img = detector.findFaces(img)
-
     if faces:
-        face = faces[0]
-
-        smiling    = detector.isSmiling(face)
-        blinking   = detector.isBlinking(face, eye='both')
-        mouthOpen  = detector.isMouthOpen(face)
-        expression = detector.getExpression(face)
+        print(detector.getExpression(faces[0]))
         # expressions: smiling, mouth_open, blink_left, blink_right, brow_down, neutral
+        jaw = detector.getBlendshape(faces[0], FaceLandmarker.JAW_OPEN)
+    return img
 
-        # Raw blendshape value (0.0 - 1.0), requires class for constant
-        jawScore = detector.getBlendshape(face, FaceLandmarker.JAW_OPEN)
-
-    cv2.imshow("FaceLandmarker", img)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
-cap.release()
-cv2.destroyAllWindows()
+cvfiq.run(process)
 ```
 
 ---
@@ -306,25 +209,16 @@ cv2.destroyAllWindows()
 
 ```python
 import cvfiq
-from cvfiq import cv2
 
-cap      = cv2.VideoCapture(0)
-detector = cvfiq.detector(scoreThreshold=0.5)  # downloads efficientdet_lite0.tflite automatically
+detector = cvfiq.detector(scoreThreshold=0.5)  # downloads model automatically on first run
 
-while True:
-    success, img = cap.read()
+def process(img):
     objects, img = detector.findObjects(img)
-
-    # Filter by label
-    people = detector.getObjectsByLabel(objects, 'person')
-    count  = detector.countObjects(objects, 'person')
+    count = detector.countObjects(objects, 'person')
     # objInfo keys: "label", "score", "bbox": (x,y,w,h), "center": (cx,cy)
+    return img
 
-    cv2.imshow("ObjectDetector", img)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
-cap.release()
-cv2.destroyAllWindows()
+cvfiq.run(process)
 ```
 
 ---
@@ -333,32 +227,23 @@ cv2.destroyAllWindows()
 
 ```python
 import cvfiq
-from cvfiq import cv2
 
-cap      = cv2.VideoCapture(0)
 detector = cvfiq.aruco(dictType='4x4_50')
 
-while True:
-    success, img = cap.read()
+def process(img):
     markers, img = detector.findMarkers(img)
     # markerInfo keys: "id", "corners": [[x,y]x4], "center": (cx,cy)
-
     if markers:
-        # Estimate 3D pose (distance in meters)
         poses, img = detector.estimatePose(img, markers, markerSize=0.05)
         for pose in poses:
             print(f"ID:{pose['id']}  dist:{pose['distance']:.3f}m")
+    return img
 
-    cv2.imshow("ArUco", img)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
-cap.release()
-cv2.destroyAllWindows()
+cvfiq.run(process)
 
-# Generate a marker image and save it
-marker    = cvfiq.aruco()
-markerImg = marker.generateMarker(markerId=0, size=200)
-cv2.imwrite("marker_0.png", markerImg)
+# Generate and save a marker image (no camera needed)
+markerImg = cvfiq.aruco().generateMarker(markerId=0, size=200)
+cvfiq.imwrite("marker_0.png", markerImg)
 ```
 
 ---
@@ -367,27 +252,16 @@ cv2.imwrite("marker_0.png", markerImg)
 
 ```python
 import cvfiq
-from cvfiq import cv2
 
-cap        = cv2.VideoCapture(0)
 classifier = cvfiq.dnn('model.onnx', 'labels.txt', imgSize=(224, 224))
 # classifier.useGPU()  # enable CUDA if available
 
-while True:
-    success, img = cap.read()
-
-    # Single prediction
+def process(img):
     scores, index, confidence = classifier.getPrediction(img)
+    topK = classifier.getTopK(img, k=3)  # [("cat", 0.92), ...]
+    return img
 
-    # Top-3 predictions
-    topK = classifier.getTopK(img, k=3)
-    # [("cat", 0.92), ("dog", 0.05), ("bird", 0.01)]
-
-    cv2.imshow("DNN", img)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
-cap.release()
-cv2.destroyAllWindows()
+cvfiq.run(process)
 ```
 
 ---
@@ -396,25 +270,14 @@ cv2.destroyAllWindows()
 
 ```python
 import cvfiq
-from cvfiq import cv2
 
-cap        = cv2.VideoCapture(0)
-stabilizer = cvfiq.stabilizer(smoothRadius=15, border='black')
+stab = cvfiq.stabilizer(smoothRadius=15, border='black')
 # border options: 'black', 'replicate', 'reflect'
 
-while True:
-    success, img = cap.read()
-    imgStab = stabilizer.stabilize(img)
+def process(img):
+    return stab.stabilize(img)
 
-    smoothness = stabilizer.getSmoothness()  # 0.0 (shaky) to 1.0 (smooth)
-
-    cv2.imshow("Stabilized", imgStab)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
-
-stabilizer.reset()  # reset when switching video source
-cap.release()
-cv2.destroyAllWindows()
+cvfiq.run(process)
 ```
 
 ---
@@ -423,55 +286,34 @@ cv2.destroyAllWindows()
 
 ```python
 import cvfiq
-from cvfiq import cv2
 
-cap           = cv2.VideoCapture(0)
-myColorFinder = cvfiq.color(trackBar=False)
-
-# Custom color HSV range
+cf      = cvfiq.color(trackBar=True)  # trackBar=True shows HSV sliders
 hsvVals = {'hmin': 10, 'smin': 55, 'vmin': 215, 'hmax': 42, 'smax': 255, 'vmax': 255}
 
-while True:
-    success, img = cap.read()
+def process(img):
+    imgColor, mask = cf.update(img, hsvVals)
+    # cf.update(img, 'red')               # built-in color
+    # cf.updateMulti(img, ['red','blue'])  # multiple colors
+    return imgColor
 
-    # Single color
-    imgColor, mask = myColorFinder.update(img, 'red')   # built-in: red, green, blue
-    imgColor, mask = myColorFinder.update(img, hsvVals)  # custom HSV
-
-    # Multiple colors at once
-    results = myColorFinder.updateMulti(img, ['red', 'green', 'blue'])
-    # results["red"]["imgColor"], results["red"]["mask"]
-
-    # Save / load custom color profiles
-    myColorFinder.saveColor('orange', hsvVals, 'colors.json')
-    loaded = myColorFinder.loadColor('orange', 'colors.json')
-
-    cv2.imshow("Color", imgColor)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
-cap.release()
-cv2.destroyAllWindows()
+cvfiq.run(process)
 ```
 
 ---
 
 ### FPS Counter
 
+`cvfiq.run()` shows FPS by default (`showFPS=True`). To use manually:
+
 ```python
 import cvfiq
-from cvfiq import cv2
 
-fpsReader = cvfiq.fps(avgCount=10)  # average over 10 frames
-cap       = cv2.VideoCapture(0)
+fpsReader = cvfiq.fps(avgCount=10)
 
-while True:
-    success, img = cap.read()
-    fps, img = fpsReader.update(img, pos=(20, 50), color=(0, 255, 0), scale=3, thickness=3)
-    cv2.imshow("Image", img)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
-cap.release()
-cv2.destroyAllWindows()
+with cvfiq.Camera(0) as cam:
+    for img in cam:
+        f, img = fpsReader.update(img, pos=(20, 50), color=(0, 255, 0))
+        cam.show(img)
 ```
 
 ---
@@ -480,34 +322,22 @@ cv2.destroyAllWindows()
 
 ```python
 import cvfiq
-from cvfiq import cv2
 
-cap      = cv2.VideoCapture(0)
 detector = cvfiq.face()
-
-# [Kp, Ki, Kd], target, iLimit = integral windup clamp
 xPID = cvfiq.pid([1, 0.0001, 0.5], targetVal=320, iLimit=[-500, 500])
 yPID = cvfiq.pid([1, 0.0001, 0.5], targetVal=240, axis=1, limit=[-100, 100], iLimit=[-500, 500])
 
-while True:
-    success, img = cap.read()
+def process(img):
     img, bboxs = detector.findFaces(img)
-
     if bboxs:
         cx, cy = bboxs[0]["center"]
-        xVal = int(xPID.update(cx))
-        yVal = int(yPID.update(cy))
-        xPID.draw(img, [cx, cy])
-        yPID.draw(img, [cx, cy])
+        xPID.update(cx);  xPID.draw(img, [cx, cy])
+        yPID.update(cy);  yPID.draw(img, [cx, cy])
     else:
-        xPID.reset()  # reset state when face lost
-        yPID.reset()
+        xPID.reset(); yPID.reset()
+    return img
 
-    cv2.imshow("Image", img)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
-cap.release()
-cv2.destroyAllWindows()
+cvfiq.run(process)
 ```
 
 ---
@@ -516,19 +346,17 @@ cv2.destroyAllWindows()
 
 ```python
 import cvfiq, math
-from cvfiq import cv2
 
 xPlot = cvfiq.plot(w=640, h=480, yLimit=[-100, 100])
-x = 0
+x     = 0
 
 while True:
     x = (x + 1) % 360
-    val = int(math.sin(math.radians(x)) * 100)
-    imgPlot = xPlot.update(val, color=(255, 0, 255))
-    cv2.imshow("Plot", imgPlot)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
+    imgPlot = xPlot.update(int(math.sin(math.radians(x)) * 100))
+    cvfiq.imshow("Plot", imgPlot)
+    if cvfiq.waitKey(1) & 0xFF == ord('q'):
         break
-cv2.destroyAllWindows()
+cvfiq.destroyAllWindows()
 ```
 
 ---
@@ -537,20 +365,13 @@ cv2.destroyAllWindows()
 
 ```python
 import cvfiq
-from cvfiq import cv2
 
-cap = cv2.VideoCapture(0)
+def process(img):
+    imgGray   = cvfiq.cvtColor(img, cvfiq.COLOR_BGR2GRAY)
+    imgList   = [img, img, imgGray, img, imgGray, img]
+    return cvfiq.stackImages(imgList, cols=3, scale=0.4)
 
-while True:
-    success, img = cap.read()
-    imgGray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    imgList = [img, img, imgGray, img, imgGray, img]
-    stackedImg = cvfiq.stackImages(imgList, cols=3, scale=0.4)
-    cv2.imshow("Stacked", stackedImg)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
-cap.release()
-cv2.destroyAllWindows()
+cvfiq.run(process)
 ```
 
 ---
@@ -560,17 +381,12 @@ cv2.destroyAllWindows()
 ```python
 import cvfiq, time
 
-# Auto-detect Arduino, or specify port
 arduino = cvfiq.serial(portNo=None, baudRate=9600, digits=3, timeout=1)
 
 while True:
-    # Send data: "$001001000" (3 digits per value)
-    arduino.sendData([1, 1, 0])
-
-    # Receive data (with timeout — won't hang)
+    arduino.sendData([1, 1, 0])   # sends "$001001000"
     data = arduino.getData()
     print(data)
-
     time.sleep(0.1)
 ```
 
@@ -580,23 +396,15 @@ while True:
 
 ```python
 import cvfiq
-from cvfiq import cv2
 
-cap        = cv2.VideoCapture(0)
 classifier = cvfiq.classify('Model/keras_model.h5', 'Model/labels.txt', imgSize=224)
 
-while True:
-    success, img = cap.read()
-
-    # Returns: (all scores list, top index, confidence)
+def process(img):
     scores, index, confidence = classifier.getPrediction(img)
     print(f"Predicted: index={index}  confidence={confidence:.2f}")
+    return img
 
-    cv2.imshow("Image", img)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
-cap.release()
-cv2.destroyAllWindows()
+cvfiq.run(process)
 ```
 
 ---
@@ -605,9 +413,8 @@ cv2.destroyAllWindows()
 
 ```python
 import cvfiq
-from cvfiq import cv2
 
-img = cv2.imread("image.jpg")
+img = cvfiq.imread("image.jpg")
 
 # Stack multiple images into one window
 stacked = cvfiq.stackImages([img, img, img], cols=3, scale=0.5)
@@ -616,7 +423,7 @@ stacked = cvfiq.stackImages([img, img, img], cols=3, scale=0.5)
 img = cvfiq.cornerRect(img, bbox=(100, 100, 200, 150))
 
 # Find contours with area filter
-imgCon, contours = cvfiq.findContours(img, imgPre, minArea=1000, filter=4)  # filter=4: rectangle only
+conFound, imgCon = cvfiq.findContours(img, imgPre, minArea=1000, filter=4)
 
 # Overlay transparent PNG
 img = cvfiq.overlayPNG(imgBack=img, imgFront=imgPNG, pos=[50, 50])
@@ -626,32 +433,43 @@ img = cvfiq.rotateImage(img, angle=45, scale=1)
 
 # Text with background rectangle
 img, rect = cvfiq.putTextRect(img, "Hello", pos=(50, 50), scale=2, thickness=2)
+
+cvfiq.imwrite("output.jpg", img)
 ```
 
 ---
 
 ## Module Overview
 
-| Module | Class | Shorthand | Description |
-|---|---|---|---|
-| `FaceDetectionModule` | `FaceDetector` | `cvfiq.face()` | Face detection + 6 keypoints |
-| `FaceMeshModule` | `FaceMeshDetector` | `cvfiq.mesh()` | 468 face landmarks, blink & mouth detection |
-| `HandTrackingModule` | `HandDetector` | `cvfiq.hand()` | 21 hand landmarks, finger detection, 2D/3D distance, angle |
-| `PoseModule` | `PoseDetector` | `cvfiq.pose()` | Body pose estimation, angle, smoothing |
-| `SelfiSegmentationModule` | `SelfiSegmentation` | `cvfiq.segment()` | Real-time background removal |
-| `GestureModule` | `GestureDetector` | `cvfiq.gesture(modelPath)` | Built-in gesture recognition (Tasks API) |
-| `FaceLandmarkerModule` | `FaceLandmarker` | `cvfiq.landmarker(modelPath)` | 478 landmarks + 52 expression blendshapes (Tasks API) |
-| `ObjectDetectorModule` | `ObjectDetector` | `cvfiq.detector(modelPath)` | 80-class object detection (Tasks API) |
-| `ArucoModule` | `ArucoDetector` | `cvfiq.aruco()` | ArUco marker detection + 3D pose estimation |
-| `DNNModule` | `DNNClassifier` | `cvfiq.dnn(model, labels)` | ONNX/TFLite classification via OpenCV DNN |
-| `VideoStabilizerModule` | `VideoStabilizer` | `cvfiq.stabilizer()` | Real-time video stabilization |
-| `ColorModule` | `ColorFinder` | `cvfiq.color()` | HSV color detection, save/load profiles, multi-color |
-| `ClassificationModule` | `Classifier` | `cvfiq.classify(model, labels)` | Teachable Machine model inference |
-| `FPS` | `FPS` | `cvfiq.fps()` | Averaged FPS counter |
-| `PIDModule` | `PID` | `cvfiq.pid(pidVals, targetVal)` | PID controller with windup clamp |
-| `PlotModule` | `LivePlot` | `cvfiq.plot()` | Real-time graph in OpenCV window |
-| `SerialModule` | `SerialObject` | `cvfiq.serial()` | Arduino serial communication |
-| `Utils` | — | `cvfiq.stackImages()` etc. | `stackImages`, `cornerRect`, `findContours`, `overlayPNG`, `rotateImage`, `putTextRect` |
+### Camera helpers
+
+| Function / Class | Description |
+|---|---|
+| `cvfiq.run(fn, source=0, showFPS=True)` | Open camera, call `fn(img)` each frame, display result. Press `q` to quit. |
+| `cvfiq.Camera(source, showFPS, title)` | Context manager for manual camera loop control. |
+
+### Detectors
+
+| Shorthand | Description |
+|---|---|
+| `cvfiq.face()` | Face detection + 6 keypoints |
+| `cvfiq.mesh()` | 468 face landmarks, blink & mouth detection |
+| `cvfiq.hand()` | 21 hand landmarks, finger detection, 2D/3D distance, angle |
+| `cvfiq.pose()` | Body pose estimation, angle, smoothing |
+| `cvfiq.segment()` | Real-time background removal with smooth alpha blending |
+| `cvfiq.gesture()` | Gesture recognition — model auto-downloaded |
+| `cvfiq.landmarker()` | 478 landmarks + 52 expression blendshapes — model auto-downloaded |
+| `cvfiq.detector()` | 80-class object detection — model auto-downloaded |
+| `cvfiq.aruco()` | ArUco marker detection + 3D pose estimation |
+| `cvfiq.dnn(model, labels)` | ONNX/TFLite classification via OpenCV DNN |
+| `cvfiq.stabilizer()` | Real-time video stabilization |
+| `cvfiq.color()` | HSV color detection, save/load profiles, multi-color |
+| `cvfiq.classify(model, labels)` | Teachable Machine / Keras model inference |
+| `cvfiq.fps()` | Averaged FPS counter |
+| `cvfiq.pid(pidVals, targetVal)` | PID controller with integral windup clamp |
+| `cvfiq.plot()` | Real-time live graph in OpenCV window |
+| `cvfiq.serial()` | Arduino serial communication |
+| `cvfiq.stackImages()`, `cvfiq.cornerRect()`, … | Utility + bundled cv2 functions (`imread`, `imshow`, `circle`, …) |
 
 ---
 
