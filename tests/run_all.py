@@ -7,12 +7,6 @@ import sys
 import traceback
 sys.path.insert(0, '..')
 
-TESTS = [
-    ("FPS",        "test_fps",   "main"),
-    ("PIDModule",  "test_pid",   "main"),
-    ("Utils",      "test_utils", None),   # has GUI, skip in batch
-]
-
 # Non-interactive logic-only tests
 def run_fps():
     import time
