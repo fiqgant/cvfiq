@@ -1,0 +1,64 @@
+name: Publish to PyPI
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install build tools
+        run: pip install setuptools wheel twine
+
+      - name: Get version from setup.py
+        id: get_version
+        run: |
+          VERSION=$(python setup.py --version 2>/dev/null)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION"
+
+      - name: Check if version already exists on PyPI
+        id: check_pypi
+        run: |
+          VERSION=${{ steps.get_version.outputs.version }}
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://pypi.org/pypi/cvfiq/$VERSION/json)
+          if [ "$STATUS" = "200" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "Version $VERSION already on PyPI — skipping upload"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "Version $VERSION not on PyPI — will upload"
+          fi
+
+      - name: Build package
+        if: steps.check_pypi.outputs.exists == 'false'
+        run: |
+          python setup.py sdist bdist_wheel
+          twine check dist/*
+
+      - name: Upload to PyPI
+        if: steps.check_pypi.outputs.exists == 'false'
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: twine upload dist/*
+
+      - name: Summary
+        run: |
+          VERSION=${{ steps.get_version.outputs.version }}
+          if [ "${{ steps.check_pypi.outputs.exists }}" = "true" ]; then
+            echo "### ⏭ Skipped — v$VERSION already on PyPI" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ✅ Published cvfiq v$VERSION to PyPI" >> $GITHUB_STEP_SUMMARY
+          fi
