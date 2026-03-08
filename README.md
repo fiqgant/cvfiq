@@ -19,7 +19,10 @@ def process(img):
     img, bboxs = face.findFaces(img)
     return img
 
-cvfiq.run(process)  # opens camera, loops, shows FPS, press q to quit
+# source=0 → default webcam, source=1 → second camera, source="video.mp4" → file
+cvfiq.run(process)              # webcam 0, FPS shown, press q to quit
+cvfiq.run(process, source=1)    # second camera
+cvfiq.run(process, source="video.mp4", showFPS=False)  # video file
 ```
 
 ## Camera Loop (manual control)
@@ -29,6 +32,7 @@ import cvfiq
 
 hand = cvfiq.hand(maxHands=1)
 
+# cvfiq.Camera(source, showFPS, title, quitKey, width, height)
 with cvfiq.Camera(0, showFPS=True, title="Hand Demo") as cam:
     for img in cam:
         hands, img = hand.findHands(img)
@@ -444,8 +448,8 @@ cvfiq.imwrite("output.jpg", img)
 
 | Function / Class | Description |
 |---|---|
-| `cvfiq.run(fn, source=0, showFPS=True)` | Open camera, call `fn(img)` each frame, display result. Press `q` to quit. |
-| `cvfiq.Camera(source, showFPS, title)` | Context manager for manual camera loop control. |
+| `cvfiq.run(fn, source=0, showFPS=True, title="cvfiq", quitKey='q')` | Open camera/video, call `fn(img)` each frame, display result. `source` = camera index or file path. |
+| `cvfiq.Camera(source=0, showFPS=False, title="cvfiq", quitKey='q', width=None, height=None)` | Context manager for manual camera loop. Iterate for frames, call `cam.show(img)` to display. |
 
 ### Detectors
 
