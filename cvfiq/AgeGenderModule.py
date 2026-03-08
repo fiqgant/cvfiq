@@ -11,11 +11,11 @@ import urllib.request
 
 
 _AGE_PROTO_URL   = ("https://raw.githubusercontent.com/smahesh29/"
-                    "Gender-and-Age-Detection/master/deploy_age.prototxt")
+                    "Gender-and-Age-Detection/master/age_deploy.prototxt")
 _AGE_MODEL_URL   = ("https://github.com/smahesh29/Gender-and-Age-Detection/"
                     "raw/master/age_net.caffemodel")
 _GEN_PROTO_URL   = ("https://raw.githubusercontent.com/smahesh29/"
-                    "Gender-and-Age-Detection/master/deploy_gender.prototxt")
+                    "Gender-and-Age-Detection/master/gender_deploy.prototxt")
 _GEN_MODEL_URL   = ("https://github.com/smahesh29/Gender-and-Age-Detection/"
                     "raw/master/gender_net.caffemodel")
 _FACE_PROTO_URL  = ("https://raw.githubusercontent.com/opencv/opencv/master/"
@@ -52,9 +52,9 @@ class AgeGenderDetector:
     """
 
     def __init__(self,
-                 ageProto='deploy_age.prototxt',
+                 ageProto='age_deploy.prototxt',
                  ageModel='age_net.caffemodel',
-                 genderProto='deploy_gender.prototxt',
+                 genderProto='gender_deploy.prototxt',
                  genderModel='gender_net.caffemodel',
                  faceProto='face_deploy.prototxt',
                  faceModel='face_res10.caffemodel',
