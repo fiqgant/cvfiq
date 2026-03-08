@@ -152,7 +152,9 @@ class Camera:
     def show(self, img, title=None):
         """Display frame. Returns key pressed. Stops iteration on quit key."""
         if self._fpsCounter is not None:
-            _, img = self._fpsCounter.update(img)
+            h = img.shape[0]
+            _, img = self._fpsCounter.update(img, pos=(10, h - 10), scale=1,
+                                             color=(0, 255, 0), thickness=2)
         cv2.imshow(title or self.title, img)
         key = cv2.waitKey(1) & 0xFF
         if key == ord(self.quitKey):
@@ -223,7 +225,9 @@ def run(fn, source=0, title="cvfiq", showFPS=True, quitKey='q',
             if show:
                 display = out.copy()
                 if fpsCounter:
-                    _, display = fpsCounter.update(display)
+                    h = display.shape[0]
+                    _, display = fpsCounter.update(display, pos=(10, h - 10), scale=1,
+                                                   color=(0, 255, 0), thickness=2)
                 cv2.imshow(title, display)
                 key = cv2.waitKey(1) & 0xFF
                 if key == ord(quitKey):

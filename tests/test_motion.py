@@ -19,13 +19,8 @@ def main():
 
     with cvfiq.Camera(0, showFPS=True, title="Motion Test") as cam:
         for img in cam:
+            # draw=True already annotates bounding boxes and "Motion: N" label
             detected, regions, img = detector.findMotion(img)
-            status = f"Motion: {'YES' if detected else 'no'}"
-            if detected:
-                status += f" ({len(regions)} regions)"
-            cvfiq.putText(img, status, (10, 30),
-                          cvfiq.FONT_HERSHEY_SIMPLEX, 0.8,
-                          (0, 0, 255) if detected else (0, 255, 0), 2)
             cam.show(img)
 
     print("  PASSED")
