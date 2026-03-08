@@ -60,3 +60,8 @@ logs/
 
 # Color profiles (user-generated)
 colors.json
+
+# cvfiq Studio outputs
+cvfiq_studio.py
+screenshot_*.jpg
+aruco_marker_*.png
