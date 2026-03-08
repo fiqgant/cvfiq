@@ -2,6 +2,40 @@
 
 A Python Computer Vision library that makes it easy to run image processing and AI functions using OpenCV and MediaPipe.
 
+## Quick Usage
+
+```python
+import cvfiq
+import cv2
+
+cap = cv2.VideoCapture(0)
+
+# One-line detector creation
+hand    = cvfiq.hand(maxHands=1)
+face    = cvfiq.face()
+mesh    = cvfiq.mesh()
+body    = cvfiq.pose()
+seg     = cvfiq.segment()
+fps     = cvfiq.fps()
+
+while True:
+    success, img = cap.read()
+
+    hands, img  = hand.findHands(img)
+    img, bboxs  = face.findFaces(img)
+    img, faces  = mesh.findFaceMesh(img)
+    img         = body.findPose(img)
+    img         = seg.removeBG(img, imgBg=(0, 255, 0))
+    f           = fps.update()
+
+    cv2.imshow("cvfiq", img)
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+cap.release()
+cv2.destroyAllWindows()
+```
+
 ## Requirements
 
 | Library | Min | Max |
