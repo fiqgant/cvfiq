@@ -6,7 +6,7 @@ with open('README.md', encoding='utf-8') as f:
 setup(
     name='cvfiq',
     packages=find_packages(),
-    version='0.4.0',
+    version='0.4.1',
     license='MIT',
     description='Computer Vision Helping Library/Functions',
     long_description=long_description,

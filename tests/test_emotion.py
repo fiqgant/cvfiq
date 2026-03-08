@@ -22,7 +22,7 @@ except Exception as e:
 
 with cvfiq.Camera(0, showFPS=True, title="Emotion Test") as cam:
     for img in cam:
-        emotions, img = detector.findEmotions(img)
+        emotions, img = detector.find(img)
         for e in emotions:
             print(f"  {e['emotion']}")
         cam.show(img)

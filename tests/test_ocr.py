@@ -18,12 +18,11 @@ try:
     reader = cvfiq.ocr()
 except Exception as e:
     print(f"  OCR not available: {e}")
-    print("  Install: pip install pytesseract")
     sys.exit(0)
 
 with cvfiq.Camera(0, showFPS=True, title="OCR Test") as cam:
     for img in cam:
-        texts, img = reader.findText(img)
+        texts, img = reader.find(img)
         for t in texts:
             print(f"  [{t['confidence']:.0f}%] {t['text']}")
         cam.show(img)
