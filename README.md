@@ -2,31 +2,33 @@
 
 A Python Computer Vision library that makes it easy to run image processing and AI functions using OpenCV and MediaPipe.
 
+> **`cv2` is included** — no need to install or import it separately.
+> **Model files are auto-downloaded** — Tasks API detectors work out of the box.
+
 ## Quick Usage
 
 ```python
 import cvfiq
-import cv2
+from cvfiq import cv2  # cv2 bundled — no separate install needed
 
-cap = cv2.VideoCapture(0)
+cap  = cv2.VideoCapture(0)
 
-# One-line detector creation
-hand    = cvfiq.hand(maxHands=1)
-face    = cvfiq.face()
-mesh    = cvfiq.mesh()
-body    = cvfiq.pose()
-seg     = cvfiq.segment()
-fps     = cvfiq.fps()
+hand = cvfiq.hand(maxHands=1)
+face = cvfiq.face()
+mesh = cvfiq.mesh()
+body = cvfiq.pose()
+seg  = cvfiq.segment()
+fps  = cvfiq.fps()
 
 while True:
     success, img = cap.read()
 
-    hands, img  = hand.findHands(img)
-    img, bboxs  = face.findFaces(img)
-    img, faces  = mesh.findFaceMesh(img)
-    img         = body.findPose(img)
-    img         = seg.removeBG(img, imgBg=(0, 255, 0))
-    f           = fps.update()
+    hands, img = hand.findHands(img)
+    img, bboxs = face.findFaces(img)
+    img, faces = mesh.findFaceMesh(img)
+    img        = body.findPose(img)
+    img        = seg.removeBG(img, imgBg=(0, 255, 0))
+    f          = fps.update()
 
     cv2.imshow("cvfiq", img)
     if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -65,7 +67,8 @@ pip install cvfiq[tensorflow]   # TensorFlow
 ### Face Detection
 
 ```python
-import cvfiq, cv2
+import cvfiq
+from cvfiq import cv2
 
 cap      = cv2.VideoCapture(0)
 detector = cvfiq.face()
@@ -92,7 +95,8 @@ cv2.destroyAllWindows()
 ### Hand Tracking
 
 ```python
-import cvfiq, cv2
+import cvfiq
+from cvfiq import cv2
 
 cap      = cv2.VideoCapture(0)
 detector = cvfiq.hand(detectionCon=0.8, maxHands=2)
@@ -136,7 +140,8 @@ cv2.destroyAllWindows()
 ### Pose Estimation
 
 ```python
-import cvfiq, cv2
+import cvfiq
+from cvfiq import cv2
 
 cap      = cv2.VideoCapture(0)
 detector = cvfiq.pose(smoothAlpha=0.5)  # 0=max smooth, 1=no smooth
@@ -168,7 +173,8 @@ cv2.destroyAllWindows()
 ### Face Mesh
 
 ```python
-import cvfiq, cv2
+import cvfiq
+from cvfiq import cv2
 from cvfiq.FaceMeshModule import FaceMeshDetector  # needed for region constants
 
 cap      = cv2.VideoCapture(0)
@@ -205,7 +211,8 @@ cv2.destroyAllWindows()
 ### Selfie Segmentation (Background Removal)
 
 ```python
-import cvfiq, cv2
+import cvfiq
+from cvfiq import cv2
 
 cap       = cv2.VideoCapture(0)
 segmentor = cvfiq.segment(model=1)  # 0=general, 1=landscape (faster)
@@ -233,14 +240,14 @@ cv2.destroyAllWindows()
 
 ---
 
-### Gesture Recognition *(requires model file)*
+### Gesture Recognition *(model auto-downloaded)*
 
 ```python
-import cvfiq, cv2
+import cvfiq
+from cvfiq import cv2
 
-# Download model: https://storage.googleapis.com/mediapipe-models/gesture_recognizer/gesture_recognizer/float16/latest/gesture_recognizer.task
 cap      = cv2.VideoCapture(0)
-detector = cvfiq.gesture('gesture_recognizer.task')
+detector = cvfiq.gesture()  # downloads gesture_recognizer.task automatically
 
 while True:
     success, img = cap.read()
@@ -260,15 +267,15 @@ cv2.destroyAllWindows()
 
 ---
 
-### Face Landmarker + Expressions *(requires model file)*
+### Face Landmarker + Expressions *(model auto-downloaded)*
 
 ```python
-import cvfiq, cv2
+import cvfiq
+from cvfiq import cv2
 from cvfiq.FaceLandmarkerModule import FaceLandmarker  # needed for blendshape constants
 
-# Download model: https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/latest/face_landmarker.task
 cap      = cv2.VideoCapture(0)
-detector = cvfiq.landmarker('face_landmarker.task')
+detector = cvfiq.landmarker()  # downloads face_landmarker.task automatically
 
 while True:
     success, img = cap.read()
@@ -295,14 +302,14 @@ cv2.destroyAllWindows()
 
 ---
 
-### Object Detection *(requires model file)*
+### Object Detection *(model auto-downloaded)*
 
 ```python
-import cvfiq, cv2
+import cvfiq
+from cvfiq import cv2
 
-# Download model: https://storage.googleapis.com/mediapipe-models/object_detector/efficientdet_lite0/int8/latest/efficientdet_lite0.tflite
 cap      = cv2.VideoCapture(0)
-detector = cvfiq.detector('efficientdet_lite0.tflite', scoreThreshold=0.5)
+detector = cvfiq.detector(scoreThreshold=0.5)  # downloads efficientdet_lite0.tflite automatically
 
 while True:
     success, img = cap.read()
@@ -325,7 +332,8 @@ cv2.destroyAllWindows()
 ### ArUco Marker Detection
 
 ```python
-import cvfiq, cv2
+import cvfiq
+from cvfiq import cv2
 
 cap      = cv2.VideoCapture(0)
 detector = cvfiq.aruco(dictType='4x4_50')
@@ -358,7 +366,8 @@ cv2.imwrite("marker_0.png", markerImg)
 ### DNN Classification (no TensorFlow needed)
 
 ```python
-import cvfiq, cv2
+import cvfiq
+from cvfiq import cv2
 
 cap        = cv2.VideoCapture(0)
 classifier = cvfiq.dnn('model.onnx', 'labels.txt', imgSize=(224, 224))
@@ -386,7 +395,8 @@ cv2.destroyAllWindows()
 ### Video Stabilizer
 
 ```python
-import cvfiq, cv2
+import cvfiq
+from cvfiq import cv2
 
 cap        = cv2.VideoCapture(0)
 stabilizer = cvfiq.stabilizer(smoothRadius=15, border='black')
@@ -412,7 +422,8 @@ cv2.destroyAllWindows()
 ### Color Detection
 
 ```python
-import cvfiq, cv2
+import cvfiq
+from cvfiq import cv2
 
 cap           = cv2.VideoCapture(0)
 myColorFinder = cvfiq.color(trackBar=False)
@@ -447,7 +458,8 @@ cv2.destroyAllWindows()
 ### FPS Counter
 
 ```python
-import cvfiq, cv2
+import cvfiq
+from cvfiq import cv2
 
 fpsReader = cvfiq.fps(avgCount=10)  # average over 10 frames
 cap       = cv2.VideoCapture(0)
@@ -467,7 +479,8 @@ cv2.destroyAllWindows()
 ### PID Controller
 
 ```python
-import cvfiq, cv2
+import cvfiq
+from cvfiq import cv2
 
 cap      = cv2.VideoCapture(0)
 detector = cvfiq.face()
@@ -502,7 +515,8 @@ cv2.destroyAllWindows()
 ### Live Plot
 
 ```python
-import cvfiq, cv2, math
+import cvfiq, math
+from cvfiq import cv2
 
 xPlot = cvfiq.plot(w=640, h=480, yLimit=[-100, 100])
 x = 0
@@ -522,7 +536,8 @@ cv2.destroyAllWindows()
 ### Stack Images
 
 ```python
-import cvfiq, cv2
+import cvfiq
+from cvfiq import cv2
 
 cap = cv2.VideoCapture(0)
 
@@ -564,7 +579,8 @@ while True:
 ### Classification (Teachable Machine)
 
 ```python
-import cvfiq, cv2
+import cvfiq
+from cvfiq import cv2
 
 cap        = cv2.VideoCapture(0)
 classifier = cvfiq.classify('Model/keras_model.h5', 'Model/labels.txt', imgSize=224)
@@ -589,7 +605,7 @@ cv2.destroyAllWindows()
 
 ```python
 import cvfiq
-import cv2
+from cvfiq import cv2
 
 img = cv2.imread("image.jpg")
 

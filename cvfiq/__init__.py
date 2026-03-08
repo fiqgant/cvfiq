@@ -1,3 +1,5 @@
+import cv2  # re-exported so users never need to import cv2 separately
+
 from cvfiq.Utils import stackImages, cornerRect, findContours, overlayPNG, rotateImage, putTextRect
 from cvfiq.ColorModule import ColorFinder
 from cvfiq.FPS import FPS
@@ -23,72 +25,107 @@ except Exception:
     pass
 
 
+# ── Auto-download helper ──────────────────────────────────────────────────────
+
+_MODEL_URLS = {
+    'gesture_recognizer.task': (
+        'https://storage.googleapis.com/mediapipe-models/'
+        'gesture_recognizer/gesture_recognizer/float16/latest/gesture_recognizer.task'
+    ),
+    'face_landmarker.task': (
+        'https://storage.googleapis.com/mediapipe-models/'
+        'face_landmarker/face_landmarker/float16/latest/face_landmarker.task'
+    ),
+    'efficientdet_lite0.tflite': (
+        'https://storage.googleapis.com/mediapipe-models/'
+        'object_detector/efficientdet_lite0/int8/latest/efficientdet_lite0.tflite'
+    ),
+}
+
+
+def _ensure_model(filename):
+    """Download model file to current directory if not already present."""
+    import os, urllib.request
+    if os.path.exists(filename):
+        return filename
+    url = _MODEL_URLS.get(filename)
+    if url is None:
+        return filename
+    print(f"[cvfiq] Downloading {filename} ...")
+    def _progress(count, block, total):
+        pct = min(count * block * 100 // total, 100)
+        print(f"\r[cvfiq] {filename}: {pct}%", end='', flush=True)
+    urllib.request.urlretrieve(url, filename, reporthook=_progress)
+    print()
+    return filename
+
+
 # ── Shorthand factory functions ───────────────────────────────────────────────
 
 def hand(**kwargs):
-    """Shorthand: create a HandDetector. Same params as HandDetector()."""
+    """Create a HandDetector. Same params as HandDetector()."""
     return HandDetector(**kwargs)
 
 def face(**kwargs):
-    """Shorthand: create a FaceDetector. Same params as FaceDetector()."""
+    """Create a FaceDetector. Same params as FaceDetector()."""
     return FaceDetector(**kwargs)
 
 def mesh(**kwargs):
-    """Shorthand: create a FaceMeshDetector. Same params as FaceMeshDetector()."""
+    """Create a FaceMeshDetector. Same params as FaceMeshDetector()."""
     return FaceMeshDetector(**kwargs)
 
 def pose(**kwargs):
-    """Shorthand: create a PoseDetector. Same params as PoseDetector()."""
+    """Create a PoseDetector. Same params as PoseDetector()."""
     return PoseDetector(**kwargs)
 
 def segment(**kwargs):
-    """Shorthand: create a SelfiSegmentation. Same params as SelfiSegmentation()."""
+    """Create a SelfiSegmentation. Same params as SelfiSegmentation()."""
     return SelfiSegmentation(**kwargs)
 
 def color(**kwargs):
-    """Shorthand: create a ColorFinder. Same params as ColorFinder()."""
+    """Create a ColorFinder. Same params as ColorFinder()."""
     return ColorFinder(**kwargs)
 
 def aruco(**kwargs):
-    """Shorthand: create an ArucoDetector. Same params as ArucoDetector()."""
+    """Create an ArucoDetector. Same params as ArucoDetector()."""
     return ArucoDetector(**kwargs)
 
 def stabilizer(**kwargs):
-    """Shorthand: create a VideoStabilizer. Same params as VideoStabilizer()."""
+    """Create a VideoStabilizer. Same params as VideoStabilizer()."""
     return VideoStabilizer(**kwargs)
 
 def pid(pidVals, targetVal, **kwargs):
-    """Shorthand: create a PID controller."""
+    """Create a PID controller."""
     return PID(pidVals, targetVal, **kwargs)
 
 def fps(**kwargs):
-    """Shorthand: create an FPS counter."""
+    """Create an FPS counter."""
     return FPS(**kwargs)
 
 def plot(**kwargs):
-    """Shorthand: create a LivePlot."""
+    """Create a LivePlot."""
     return LivePlot(**kwargs)
 
 def classify(modelPath, labelsPath, **kwargs):
-    """Shorthand: create a Classifier."""
+    """Create a Classifier (Teachable Machine / Keras model)."""
     return Classifier(modelPath, labelsPath, **kwargs)
 
 def dnn(modelPath, labelsPath, **kwargs):
-    """Shorthand: create a DNNClassifier."""
+    """Create a DNNClassifier (ONNX / TFLite via OpenCV DNN)."""
     return DNNClassifier(modelPath, labelsPath, **kwargs)
 
 def serial(**kwargs):
-    """Shorthand: create a SerialObject."""
+    """Create a SerialObject for Arduino communication."""
     return SerialObject(**kwargs)
 
-def gesture(modelPath, **kwargs):
-    """Shorthand: create a GestureDetector (requires model file)."""
-    return GestureDetector(modelPath, **kwargs)
+def gesture(modelPath='gesture_recognizer.task', **kwargs):
+    """Create a GestureDetector. Model auto-downloaded if not present."""
+    return GestureDetector(_ensure_model(modelPath), **kwargs)
 
-def landmarker(modelPath, **kwargs):
-    """Shorthand: create a FaceLandmarker (requires model file)."""
-    return FaceLandmarker(modelPath, **kwargs)
+def landmarker(modelPath='face_landmarker.task', **kwargs):
+    """Create a FaceLandmarker. Model auto-downloaded if not present."""
+    return FaceLandmarker(_ensure_model(modelPath), **kwargs)
 
-def detector(modelPath, **kwargs):
-    """Shorthand: create an ObjectDetector (requires model file)."""
-    return ObjectDetector(modelPath, **kwargs)
+def detector(modelPath='efficientdet_lite0.tflite', **kwargs):
+    """Create an ObjectDetector. Model auto-downloaded if not present."""
+    return ObjectDetector(_ensure_model(modelPath), **kwargs)
