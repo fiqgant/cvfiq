@@ -130,7 +130,6 @@ cvfiq.run(process)
 
 ```python
 import cvfiq
-from cvfiq.FaceMeshModule import FaceMeshDetector  # for region constants
 
 detector = cvfiq.mesh(maxFaces=2)
 
@@ -367,8 +366,8 @@ cvfiq.destroyAllWindows()
 import cvfiq
 
 def process(img):
-    imgGray   = cvfiq.cvtColor(img, cvfiq.COLOR_BGR2GRAY)
-    imgList   = [img, img, imgGray, img, imgGray, img]
+    imgFlip = cvfiq.flip(img, 1)
+    imgList = [img, imgFlip, img, imgFlip, img, imgFlip]
     return cvfiq.stackImages(imgList, cols=3, scale=0.4)
 
 cvfiq.run(process)
