@@ -657,4 +657,4 @@ python test_utils.py
 
 ## License
 
-MIT License — see [LICENSE.txt](LICENSE.txt)
+MIT License — see [LICENSE](LICENSE)
