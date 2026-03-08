@@ -61,6 +61,12 @@ pip install cvfiq[keras]        # standalone Keras
 pip install cvfiq[tensorflow]   # TensorFlow
 ```
 
+For optional heavy modules:
+```bash
+pip install pytesseract          # OCRModule (+ install tesseract binary)
+pip install deepface             # EmotionModule
+```
+
 ---
 
 ## Modules
@@ -442,6 +448,204 @@ cvfiq.imwrite("output.jpg", img)
 
 ---
 
+### QR Code & Barcode Detection
+
+```python
+import cvfiq
+
+scanner = cvfiq.qr()
+
+def process(img):
+    codes, img = scanner.findCodes(img)
+    for c in codes:
+        print(c["data"], c["type"])
+        # keys: "data", "type", "corners", "center"
+    return img
+
+cvfiq.run(process)
+```
+
+---
+
+### Motion Detection
+
+```python
+import cvfiq
+
+detector = cvfiq.motion(threshold=500, history=200)
+
+def process(img):
+    detected, regions, img = detector.findMotion(img)
+    if detected:
+        print(f"Motion in {len(regions)} region(s)")
+    return img
+
+cvfiq.run(process)
+```
+
+---
+
+### Object Tracker
+
+```python
+import cvfiq
+
+tracker = cvfiq.tracker(algo='CSRT')  # CSRT (default), KCF, MIL
+
+def process(img):
+    success, bbox, img = tracker.update(img)
+    return img
+
+# Initialize tracker with bounding box — select ROI with mouse
+with cvfiq.Camera(0) as cam:
+    for img in cam:
+        bbox = tracker.select(img)   # opens ROI selector
+        break
+cvfiq.run(process)
+```
+
+---
+
+### OCR (Text Detection)
+
+Requires: `pip install pytesseract` + [tesseract binary](https://github.com/tesseract-ocr/tesseract)
+
+```python
+import cvfiq
+
+reader = cvfiq.ocr()
+
+def process(img):
+    texts, img = reader.findText(img)
+    for t in texts:
+        print(t["text"], t["confidence"])
+        # keys: "text", "confidence", "bbox", "center"
+    return img
+
+cvfiq.run(process)
+```
+
+---
+
+### Depth Estimation
+
+Model auto-downloaded on first use (MiDaS ONNX).
+
+```python
+import cvfiq
+
+estimator = cvfiq.depth()
+
+def process(img):
+    depthMap, colorized = estimator.findDepth(img)
+    return colorized   # colorized depth map
+
+cvfiq.run(process)
+```
+
+---
+
+### Emotion Detection
+
+Requires: `pip install deepface`
+
+```python
+import cvfiq
+
+detector = cvfiq.emotion()
+
+def process(img):
+    emotions, img = detector.findEmotions(img)
+    for e in emotions:
+        print(e["emotion"], e["scores"])
+        # keys: "emotion", "scores", "bbox", "center"
+    return img
+
+cvfiq.run(process)
+```
+
+---
+
+### Age & Gender Detection
+
+Models auto-downloaded on first use.
+
+```python
+import cvfiq
+
+detector = cvfiq.age_gender()
+
+def process(img):
+    results, img = detector.findAgeGender(img)
+    for r in results:
+        print(r["gender"], r["age"])
+        # keys: "gender", "genderConf", "age", "ageConf", "bbox", "center"
+    return img
+
+cvfiq.run(process)
+```
+
+---
+
+### Pipeline (chain functions)
+
+```python
+import cvfiq
+
+hand = cvfiq.hand()
+face = cvfiq.face()
+
+pipe = cvfiq.pipeline(
+    lambda img: hand.findHands(img)[1],
+    lambda img: face.findFaces(img)[0],
+)
+
+cvfiq.run(pipe)
+```
+
+---
+
+### Text & Snapshot helpers
+
+```python
+import cvfiq
+
+def process(img):
+    cvfiq.text(img, "Hello!", (10, 30))
+    cvfiq.text(img, "Label", (10, 60), color=(0, 255, 0), bg=True)
+    return img
+
+# Press 's' to save snapshot
+cvfiq.run(process, keys={'s': lambda img: cvfiq.snapshot(img)})
+```
+
+---
+
+### Advanced `cvfiq.run()` parameters
+
+```python
+cvfiq.run(process, source=0)                      # default webcam
+cvfiq.run(process, source=1)                      # second camera
+cvfiq.run(process, source="video.mp4")            # video file
+cvfiq.run(process, show=False, record="out.mp4")  # headless + save video
+cvfiq.run(process, width=1280, height=720)        # set resolution
+cvfiq.run(process, keys={'s': lambda img: cvfiq.snapshot(img)})  # key callbacks
+```
+
+| Parameter | Default | Description |
+|---|---|---|
+| `fn` | — | Function that receives `img` and returns processed `img` |
+| `source` | `0` | Camera index or video file path |
+| `title` | `"cvfiq"` | Window title |
+| `showFPS` | `True` | Overlay FPS counter |
+| `quitKey` | `'q'` | Key to exit |
+| `width` / `height` | `None` | Set camera resolution |
+| `show` | `True` | Display window (`False` = headless/server mode) |
+| `record` | `None` | File path to save output video, e.g. `"output.mp4"` |
+| `keys` | `None` | Dict of key callbacks, e.g. `{'s': lambda img: cvfiq.snapshot(img)}` |
+
+---
+
 ## Module Overview
 
 ### Camera helpers
@@ -472,6 +676,16 @@ cvfiq.imwrite("output.jpg", img)
 | `cvfiq.pid(pidVals, targetVal)` | PID controller with integral windup clamp |
 | `cvfiq.plot()` | Real-time live graph in OpenCV window |
 | `cvfiq.serial()` | Arduino serial communication |
+| `cvfiq.qr()` | QR code & barcode detection |
+| `cvfiq.motion()` | Background subtraction motion detection |
+| `cvfiq.tracker(algo)` | Single-object tracker (CSRT/KCF/MIL) |
+| `cvfiq.ocr()` | Text recognition via pytesseract *(optional)* |
+| `cvfiq.depth()` | MiDaS monocular depth estimation — model auto-downloaded *(optional)* |
+| `cvfiq.emotion()` | Emotion recognition via deepface *(optional)* |
+| `cvfiq.age_gender()` | Age & gender estimation — models auto-downloaded *(optional)* |
+| `cvfiq.pipeline(*fns)` | Chain multiple process functions into one |
+| `cvfiq.text(img, txt, pos)` | One-line putText shorthand |
+| `cvfiq.snapshot(img)` | Save numbered JPEG file |
 | `cvfiq.stackImages()`, `cvfiq.cornerRect()`, … | Utility + bundled cv2 functions (`imread`, `imshow`, `circle`, …) |
 
 ---
@@ -504,6 +718,17 @@ python test_object_detector.py
 # GUI tests (no camera)
 python test_plot.py
 python test_utils.py
+
+# New module tests (webcam required)
+python test_qr.py
+python test_motion.py
+python test_tracker.py
+
+# Optional module tests (extra deps needed)
+python test_ocr.py       # pip install pytesseract
+python test_depth.py     # model auto-downloaded
+python test_emotion.py   # pip install deepface
+python test_age_gender.py  # models auto-downloaded
 ```
 
 ---

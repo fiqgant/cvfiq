@@ -102,6 +102,7 @@ def run_imports():
         'cvfiq.ArucoModule', 'cvfiq.DNNModule',
         'cvfiq.VideoStabilizerModule', 'cvfiq.GestureModule',
         'cvfiq.FaceLandmarkerModule', 'cvfiq.ObjectDetectorModule',
+        'cvfiq.QRModule', 'cvfiq.MotionModule', 'cvfiq.TrackerModule',
         'cvfiq.Utils',
     ]
     for m in modules:
@@ -160,6 +161,13 @@ if __name__ == "__main__":
         ("test_gesture.py",            "GestureModule (needs .task model)"),
         ("test_face_landmarker.py",    "FaceLandmarkerModule (needs .task model)"),
         ("test_object_detector.py",    "ObjectDetectorModule (needs .tflite model)"),
+        ("test_qr.py",                 "QRModule"),
+        ("test_motion.py",             "MotionModule"),
+        ("test_tracker.py",            "TrackerModule"),
+        ("test_ocr.py",                "OCRModule (pip install pytesseract)"),
+        ("test_depth.py",              "DepthModule (model auto-downloaded)"),
+        ("test_emotion.py",            "EmotionModule (pip install deepface)"),
+        ("test_age_gender.py",         "AgeGenderModule (models auto-downloaded)"),
     ]
 
     print()
