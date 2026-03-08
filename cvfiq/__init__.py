@@ -32,7 +32,6 @@ from cvfiq.HandTrackingModule import HandDetector
 from cvfiq.PoseModule import PoseDetector
 from cvfiq.SelfiSegmentationModule import SelfiSegmentation
 from cvfiq.SerialModule import SerialObject
-from cvfiq.ClassificationModule import Classifier
 from cvfiq.ArucoModule import ArucoDetector
 from cvfiq.DNNModule import DNNClassifier
 from cvfiq.VideoStabilizerModule import VideoStabilizer
@@ -49,6 +48,11 @@ except Exception:
     pass
 
 # Optional heavy modules — graceful fallback if deps not installed
+try:
+    from cvfiq.ClassificationModule import Classifier
+except Exception:
+    pass
+
 try:
     from cvfiq.OCRModule import OCRReader
 except Exception:

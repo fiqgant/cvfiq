@@ -7,12 +7,21 @@ https://teachablemachine.withgoogle.com/
 import numpy as np
 import cv2
 
-try:
-    import keras
-    _load_model = keras.models.load_model
-except ImportError:
-    from tensorflow import keras
-    _load_model = keras.models.load_model
+
+def _load_keras():
+    try:
+        import keras
+        return keras.models.load_model
+    except ImportError:
+        pass
+    try:
+        from tensorflow import keras
+        return keras.models.load_model
+    except ImportError:
+        raise ImportError(
+            "ClassificationModule requires keras or tensorflow. "
+            "Install with: pip install cvfiq[keras] or pip install cvfiq[tensorflow]"
+        )
 
 
 class Classifier:
@@ -26,6 +35,7 @@ class Classifier:
         self.model_path = modelPath
         self.imgSize = imgSize
         np.set_printoptions(suppress=True)
+        _load_model = _load_keras()
         self.model = _load_model(self.model_path)
         self.data = np.ndarray(shape=(1, self.imgSize, self.imgSize, 3), dtype=np.float32)
         self.labels_path = labelsPath
